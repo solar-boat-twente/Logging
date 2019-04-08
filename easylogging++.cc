@@ -12,10 +12,8 @@
 //
 //  https://zuhd.org
 //  http://muflihun.com
-//
 
-#include "easylogging++.h"
-
+#include "headerfiles/easylogging++.h"
 #if defined(AUTO_INITIALIZE_EASYLOGGINGPP)
 INITIALIZE_EASYLOGGINGPP
 #endif
@@ -69,7 +67,7 @@ static const char* kMonths[12]                      =      { "January", "Februar
                                                            };
 static const char* kMonthsAbbrev[12]                =      { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 //static const char* kDefaultDateTimeFormat           =      "%Y-%M-%d %H:%m:%s,%g";
-static const char* kDefaultDateTimeFormat               =      "%H:%m:%s,%g";
+static const char* kDefaultDateTimeFormat               =  "%H:%m:%s";
 static const char* kDefaultDateTimeFormatInFilename =      "%Y-%M-%d_%H-%m";
 static const int kYearBase                          =      1900;
 static const char* kAm                              =      "AM";

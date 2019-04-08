@@ -35,9 +35,10 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 
 # Object Files
 OBJECTFILES= \
-	${OBJECTDIR}/Logging/logging.o \
 	${OBJECTDIR}/easylogging++.o \
-	${OBJECTDIR}/main.o
+	${OBJECTDIR}/logging.o \
+	${OBJECTDIR}/main.o \
+	${OBJECTDIR}/thread.o
 
 
 # C Compiler Flags
@@ -64,20 +65,25 @@ ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/logging: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
 	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/logging ${OBJECTFILES} ${LDLIBSOPTIONS}
 
-${OBJECTDIR}/Logging/logging.o: Logging/logging.cpp
-	${MKDIR} -p ${OBJECTDIR}/Logging
-	${RM} "$@.d"
-	$(COMPILE.cc) -O2 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Logging/logging.o Logging/logging.cpp
-
 ${OBJECTDIR}/easylogging++.o: easylogging++.cc
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -O2 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/easylogging++.o easylogging++.cc
 
+${OBJECTDIR}/logging.o: logging.cpp
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -O2 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/logging.o logging.cpp
+
 ${OBJECTDIR}/main.o: main.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -O2 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/main.o main.cpp
+
+${OBJECTDIR}/thread.o: thread.cpp
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -O2 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/thread.o thread.cpp
 
 # Subprojects
 .build-subprojects:

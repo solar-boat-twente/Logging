@@ -1,3 +1,4 @@
-build/Debug/GNU-Linux/easylogging++.o: easylogging++.cc easylogging++.h
+build/Debug/GNU-Linux/easylogging++.o: easylogging++.cc \
+ headerfiles/easylogging++.h
 
-easylogging++.h:
+headerfiles/easylogging++.h:
