@@ -12,6 +12,10 @@
  */
 
 #include "headerfiles/thread.h"
+#define CONTROL_DATA_WRITE_CYCLE_TIME 13333
+#define USER_POWER_WRITE_CYCLE_TIME 200000
+#define TELEM_INPUT_WRITE_CYCLE_TIME 20000
+
 
 Thread::Thread()
 {
@@ -35,83 +39,93 @@ Thread::~Thread()
 {
     pthread_join(thread1, &temp);
     pthread_join(thread2, &temp);
+    pthread_join(thread3, &temp);
+    pthread_join(thread4, &temp);
 }
 
-const char *PathToPipeA = "/home/ronaldboon/NetBeansProjects/Logging/pipes/BoardReadPipe";
-const char *PathToPipeB = "/home/ronaldboon/NetBeansProjects/Logging/pipes/BoardWritePipe";
+const char *pipe_control_data_to_python = "/home/ronaldboon/NetBeansProjects/Logging/pipes/ControlDataToPython";
+const char *pipe_user_power_to_python = "/home/ronaldboon/NetBeansProjects/Logging/pipes/UserPowerToPython";
+const char *pipe_telem_input_to_python = "/home/ronaldboon/NetBeansProjects/Logging/pipes/TelemInputToPython";
 
+Logger control_data_logger("config/control_data.conf");
+Logger user_power_logger("config/user_power.conf");
+Logger telem_input_logger("config/telem_input.conf");
 
+Logger control_data_pipe("config/control_data_python.conf");
+Logger user_power_pipe("config/user_power_python.conf");
+Logger telem_input_pipe("config/telem_input_python.conf");
 
-//buffers to write data from pipe in
-char InputString[1000];
-char OutputString[1000];
+structures::ControlData *gl_control_data_ptr;
+structures::PowerInput *gl_power_input_ptr;
+structures::PowerOutput *gl_power_output_ptr;
+structures::UserInput *gl_user_input_ptr;
+structures::TelemetryInput *gl_telemetry_input_ptr;
+  
 
 //prototype functions
 void *ThreadReadPipe(void *ptr);
-void *ThreadWritePipe(void *ptr);
-inline bool exist_test(const std::string& name);
+void *ThreadWriteControlData(void *ptr);
+void *ThreadWriteUserPowerData(void *ptr);
+void *ThreadWriteTelemInputData(void *ptr);
+//int CreatePipe(const char *path_to_pipe);
+//int CreateThread(pthread_t thread, std::function<void(void)> func);
+inline bool exist_test(const char * name_char);
 
-int flagThread = 0;
+int flagControlDataThread = 0;
+int flagUserPowerThread = 0;
+int flagTelemThread = 0;
+
+bool ControlDataToLogfile = 0;
+bool ControlDataToPython = 0;
+bool UserPowerToLogfile = 0;
+bool UserPowerToPython = 0;
+bool TelemInputToLogfile = 0;
+bool TelemInputToPython = 0;
 
 //create mutexes  
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex3 = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex4 = PTHREAD_MUTEX_INITIALIZER;
 
 
 
-    
-int Thread::CreateThread()
+/*
+int Thread::CreateThread(pthread_t thread, vFunctionCall func)
+{
+    pthread_create(&thread, NULL, func(), NULL);
+    if (errno == 0)
+    {
+        std::cout << "Thread created succesfully" << std::endl;
+    }
+    else
+    {
+        std::cout << "Creating thread  failed! Errno: " << errno << ": ";
+        std::cout << strerror(errno) << std::endl;
+        //return -1;
+    }
+}
+ * */
+int Thread::CreateThreads()
 {
     /*! \fn int Thread::CreateThread()
      \brief Creates a thread for reading and writing via pipes to server
      \return 0 if succesfull, returns -1 if failed 
      */
-    
-    //gets result from fifo check
-    bool ExistFiFoA = exist_test(PathToPipeA);
-    bool ExistFiFoB = exist_test(PathToPipeB);
+    CreatePipe(pipe_control_data_to_python);
 
-    //checks if fifo exists, if not it creates them
-    if ((ExistFiFoA == 0) || (ExistFiFoB == 0))
-    {  
-        if (mkfifo(PathToPipeA, 0666))
-        {
-            std::cout << "Pipe A created succesfully" << std::endl;
-        }
-        else
-        {
-            std::cout << "Creating pipe A failed! Errno: " << errno << ": ";
-            std::cout << strerror(errno) << std::endl;
-        }
-        
-        if (mkfifo(PathToPipeB, 0666))
-        {
-            std::cout << "Pipe B created succesfully" << std::endl;
-        }
-        else
-        {
-            std::cout << "Creating pipe B failed! Errno: " << errno << ": ";
-            std::cout << strerror(errno) << std::endl;
-        }
-    }
-    else
-    {
-        std::cout << "Pipes A and B exist" << std::endl;
-    }
-    // creates threads for reading and writing pipe
+    
     pthread_create(&thread1, NULL, ThreadReadPipe, NULL);
     if (errno == 0)
     {
-        std::cout << "Thread 1 created succesfully" << std::endl;
+        std::cout << "Thread "<< pipe_control_data_to_python<<" created succesfully" << std::endl;
     }
     else
     {
-        std::cout << "Creating thread 1 failed! Errno: " << errno << ": ";
+        std::cout << "Creating thread  failed! Errno: " << errno << ": ";
         std::cout << strerror(errno) << std::endl;
-        //return -1;
     }
-
-    pthread_create(&thread2, NULL, ThreadWritePipe, NULL);
+    pthread_create(&thread2, NULL, ThreadWriteControlData, NULL);
     if (errno == 0)
     {
         std::cout << "Thread 2 created succesfully" << std::endl;
@@ -121,7 +135,46 @@ int Thread::CreateThread()
         std::cout << "Creating thread 2 failed! Errno: " << errno << ": ";
         std::cout << strerror(errno) << std::endl;
     }
+    pthread_create(&thread3, NULL, ThreadWriteUserPowerData, NULL);
+    if (errno == 0)
+    {
+        std::cout << "Thread 3 created succesfully" << std::endl;
+    }
+    else
+    {
+        std::cout << "Creating thread 3 failed! Errno: " << errno << ": ";
+        std::cout << strerror(errno) << std::endl;
+    }
+    pthread_create(&thread4, NULL, ThreadWriteTelemInputData, NULL);
+    if (errno == 0)
+    {
+        std::cout << "Thread 4 created succesfully" << std::endl;
+    }
+    else
+    {
+        std::cout << "Creating thread 4 failed! Errno: " << errno << ": ";
+        std::cout << strerror(errno) << std::endl;
+    }
+     
     return 0;
+}
+
+
+int Thread::CreatePipe(const char *path_to_pipe)
+{
+    bool ExistFiFo = exist_test(path_to_pipe);
+    if (ExistFiFo == 0)
+    {  
+        if (mkfifo(path_to_pipe, 0666))
+        {
+            std::cout << "Pipe: " << path_to_pipe  <<  "created succesfully" << std::endl;
+        }
+        else
+        {
+            std::cout << "Creating pipe: " << path_to_pipe  <<" failed! Errno: " << errno << ": ";
+            std::cout << strerror(errno) << std::endl;
+        }
+    }
 }
 
 std::string Thread::getString()
@@ -131,30 +184,58 @@ std::string Thread::getString()
     \param message contains a array of chars that can be transfered to the main through a pointer
      */
 
-    std::string UntilDelim;
+    //std::string UntilDelim;
     
-    std::istringstream InputStringStream(InputString);
-    std::getline(InputStringStream, UntilDelim, '$'); // gets line until stop sign '$'
-    memset(InputString, '\0', sizeof (InputString));
+    //std::istringstream InputStringStream(InputString);
+    //std::getline(InputStringStream, UntilDelim, '$'); // gets line until stop sign '$'
+    //memset(InputString, '\0', sizeof (InputString));
 
-    return UntilDelim;
+   //return UntilDelim;
 }
 
-void Thread::writeString(std::string message, int flagWrite)
+void Thread::writeControlData(structures::ControlData *control_data_ptr, bool to_logfile, bool to_python)
 {
     /*! \fn void Thread::writeString(char* message, int flagWrite)
       \brief for writing messages, from the main through the thread to the server
-      \param message that needs to be written to the pipe
       \param flagWrite sets a flag in the thread if there needs to be data written to the server. Keeps the thread from spamming the server side.
-     * \param bool pipe 
      */
 
-    message = message + '$';
-
-    strcpy(OutputString, message.c_str());
-
-    flagThread = flagWrite;
+    gl_control_data_ptr = control_data_ptr;
+    ControlDataToLogfile = to_logfile;
+    ControlDataToPython = to_python;
+    
 }
+
+void Thread::writeUserPower(structures::PowerInput *power_input_ptr, structures::PowerOutput *power_output_ptr, structures::UserInput *user_input_ptr, bool to_logfile, bool to_python)
+{
+    /*! \fn void Thread::writeString(char* message, int flagWrite)
+      \brief for writing messages, from the main through the thread to the server
+      \param flagWrite sets a flag in the thread if there needs to be data written to the server. Keeps the thread from spamming the server side.
+     */
+
+    gl_power_input_ptr = power_input_ptr;
+    gl_power_output_ptr = power_output_ptr;
+    gl_user_input_ptr = user_input_ptr;
+    UserPowerToLogfile = to_logfile;
+    UserPowerToPython = to_python;
+}
+
+void Thread::writeTelemInput(structures::TelemetryInput *telemetry_input_ptr, bool to_logfile, bool to_python)
+{
+    /*! \fn void Thread::writeString(char* message, int flagWrite)
+      \brief for writing messages, from the main through the thread to the server
+      \param flagWrite sets a flag in the thread if there needs to be data written to the server. Keeps the thread from spamming the server side.
+     */
+
+    gl_telemetry_input_ptr = telemetry_input_ptr;
+    TelemInputToLogfile = to_logfile;
+    TelemInputToPython = to_python;
+}
+
+
+
+
+
 
 void *ThreadReadPipe(void *ptr)
 {
@@ -162,7 +243,7 @@ void *ThreadReadPipe(void *ptr)
      \brief This is a thread to open the pipe, read data, and closes it every 10000 microseconds
      \param *ptr for making thread
      */
-
+/*
     int FifoA;
     char tempString[1000]; //= {};
     while (1)
@@ -187,11 +268,49 @@ void *ThreadReadPipe(void *ptr)
             //return -1;
         }
         usleep(100000);
-    }
+    }*/
 }
 
 
-void *ThreadWritePipe(void *ptr)
+void *ThreadWriteControlData(void *ptr)
+{
+    /*! \fn void *ThreadWritePipe(void *ptr)
+     \brief This is a thread to open the pipe, write data, and closes it every 10000 microseconds
+     \param *ptr for making thread
+     */
+    int Fifo;
+    while (1)
+    {
+        if (ControlDataToLogfile == 1) // only needs to write if the command is given
+        {
+            pthread_mutex_lock(&mutex2);
+            control_data_logger.write_struct_control_data_to_log(gl_control_data_ptr);
+            ControlDataToLogfile = 0;
+           
+            pthread_mutex_unlock(&mutex2);
+            if (errno == 0)
+            {
+                std::cout << "Writing to log succesfully" << std::endl;
+            }
+            else
+            {
+                std::cout << "Writing failed! Errno: " << errno << ": ";
+                std::cout << strerror(errno) << std::endl;
+            }
+        }
+        if (ControlDataToPython == 1) // only needs to write if the command is given
+        {
+            pthread_mutex_lock(&mutex2);
+            freopen(pipe_control_data_to_python, "w", stdout);
+            control_data_pipe.write_struct_control_data_to_log(gl_control_data_ptr);
+            pthread_mutex_unlock(&mutex2);
+            ControlDataToPython = 0;
+        }
+        usleep(CONTROL_DATA_WRITE_CYCLE_TIME);
+    }
+}
+
+void *ThreadWriteUserPowerData(void *ptr)
 {
     /*! \fn void *ThreadWritePipe(void *ptr)
      \brief This is a thread to open the pipe, write data, and closes it every 10000 microseconds
@@ -201,20 +320,15 @@ void *ThreadWritePipe(void *ptr)
     char tempString[1000];
     while (1)
     {
-        if (flagThread == 1) // only needs to write if the command is given
+        if (UserPowerToLogfile == 1) // only needs to write if the command is given
         {
             //strcpy(tempString, OutputString); // copies data from WriteString function
-            pthread_mutex_lock(&mutex2);
+            pthread_mutex_lock(&mutex3);
          
-            // opens pipe, write data, closes pipe, clears buffer
-            FifoB = open(PathToPipeB, O_WRONLY);
-            //std::cout << "writing: " << tempString << std::endl;
-            write(FifoB, tempString, 1000);
-            close(FifoB);
-            memset(OutputString, '\0', sizeof (OutputString));
-            flagThread = 0;
+            user_power_logger.write_struct_user_power_to_log(gl_power_input_ptr, gl_power_output_ptr, gl_user_input_ptr);
+            UserPowerToLogfile = 0;
            
-            pthread_mutex_unlock(&mutex2);
+            pthread_mutex_unlock(&mutex3);
             if (errno == 0)
             {
                 std::cout << "Fifo B opening/write succesfully" << std::endl;
@@ -225,11 +339,67 @@ void *ThreadWritePipe(void *ptr)
                 std::cout << strerror(errno) << std::endl;
             }
         }
-        usleep(100000);
+        if (UserPowerToPython == 1) // only needs to write if the command is given
+        {
+            pthread_mutex_lock(&mutex3);
+            freopen(pipe_user_power_to_python, "w", stdout);
+            user_power_pipe.write_struct_user_power_to_log(gl_power_input_ptr, gl_power_output_ptr, gl_user_input_ptr);
+            UserPowerToPython = 0;
+           
+            pthread_mutex_unlock(&mutex3);
+        }
+        usleep(USER_POWER_WRITE_CYCLE_TIME);
     }
 }
-inline bool exist_test(const std::string & name)
+
+void *ThreadWriteTelemInputData(void *ptr)
 {
+    /*! \fn void *ThreadWritePipe(void *ptr)
+     \brief This is a thread to open the pipe, write data, and closes it every 10000 microseconds
+     \param *ptr for making thread
+     */
+    int FifoB;
+    char tempString[1000];
+    while (1)
+    {
+        if (TelemInputToLogfile == 1) // only needs to write if the command is given
+        {
+            //strcpy(tempString, OutputString); // copies data from WriteString function
+            pthread_mutex_lock(&mutex4);
+         
+    
+            telem_input_logger.write_struct_telemetry_input_to_log(gl_telemetry_input_ptr);
+            TelemInputToLogfile = 0;
+           
+            pthread_mutex_unlock(&mutex4);
+            if (errno == 0)
+            {
+                std::cout << "Fifo B opening/write succesfully" << std::endl;
+            }
+            else
+            {
+                std::cout << "Writing/opening Fifo B failed! Errno: " << errno << ": ";
+                std::cout << strerror(errno) << std::endl;
+            }
+        }
+        if (TelemInputToPython == 1) // only needs to write if the command is given
+        {
+            pthread_mutex_lock(&mutex3);
+            freopen(pipe_telem_input_to_python, "w", stdout);
+            telem_input_pipe.write_struct_telemetry_input_to_log(gl_telemetry_input_ptr);
+            TelemInputToPython = 0;
+           
+            pthread_mutex_unlock(&mutex3);
+        }
+        usleep(TELEM_INPUT_WRITE_CYCLE_TIME);
+    }
+}
+ 
+
+inline bool exist_test(const char * name_char)
+{
+    std::string name = name_char;
     struct stat buffer;
     return (stat(name.c_str(), &buffer) == 0);
 }
+

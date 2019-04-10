@@ -24,21 +24,28 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "structures.h"
-
+#include "logging.h" 
+#include <functional>
 
 class Thread {
 public:
     void* temp;
-    pthread_t thread1, thread2;
+    typedef void (* vFunctionCall)(void);
+    pthread_t thread1, thread2, thread3, thread4, thread5, thread6, thread7;
 
     Thread();
     Thread(const Thread& orig);
     
     virtual ~Thread();
     
-    int CreateThread();
+    int CreateThreads();
     std::string getString();
-    void writeString(std::string message, int flagWrite);
+    void writeControlData(structures::ControlData *control_data_ptr, bool to_logfile, bool to_python);
+    void writeUserPower(structures::PowerInput *power_input_ptr, structures::PowerOutput *power_output_ptr, structures::UserInput *user_input_ptr, bool to_logfile, bool to_python);
+    void writeTelemInput(structures::TelemetryInput *telemetry_input_ptr, bool to_logfile, bool to_python);
+    //int CreateThread(pthread_t thread, vFunctionCall func);
+    int CreatePipe(const char *path_to_pipe);
+    
 private:
 
 };

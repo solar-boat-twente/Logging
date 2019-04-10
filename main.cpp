@@ -5,7 +5,7 @@
 #include "headerfiles/convert_power.h"
 #include "headerfiles/logging.h"
 #include "headerfiles/thread.h"
-#define CYCLETIME 20000
+
 
 
 int gen_rand()
@@ -15,20 +15,9 @@ int gen_rand()
 
 
 int main(int argc, const char** argv) {
-
-   Logger user_power_logger ("config/user_power.conf");
-   //Thread Threads; 
-   Logger control_data_logger("config/control_data.conf");
+   Thread Threads; 
    std::srand(std::time(nullptr));
-   //Logger telemetry_input_logger;
-   //Threads.CreateThread();
-   //Threads.writeString("HOIII", 1); // sends it
-  
-   //user_power_logger.logger_init("config/user_power.conf");
-   //control_data_logger.logger_init("control_data.conf");
-   //telemetry_input_logger.logger_init("telemetry_input.conf");
-   
-   
+   Threads.CreateThreads();
    structures::PowerInput *power_input_ptr, power_input;
    power_input_ptr = &power_input;
    structures::PowerOutput *power_output_ptr, power_output;
@@ -64,8 +53,9 @@ int main(int argc, const char** argv) {
    //control_data_ptr->computed.angle_back = gen_rand();
    //power_input_ptr->battery.state_of_charge = 9.3;
    //user_power_logger.write_struct_user_power_to_log(power_input_ptr, power_output_ptr, user_input_ptr);
-   control_data_logger.write_struct_control_data_to_log(control_data_ptr);
-   usleep(CYCLETIME); 
+   //control_data_logger.write_struct_control_data_to_log(control_data_ptr);
+   Threads.writeControlData(control_data_ptr, 0, 1);
+   //usleep(20000); 
    }
    return 0;
 }
