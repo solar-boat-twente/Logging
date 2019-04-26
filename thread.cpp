@@ -113,8 +113,10 @@ int Thread::CreateThreads()
      \return 0 if succesfull, returns -1 if failed 
      */
     CreatePipe(pipe_control_data_to_python);
-
-    
+    CreatePipe(pipe_user_power_to_python);    
+    CreatePipe(pipe_telem_input_to_python);
+       
+    /*
     pthread_create(&thread1, NULL, ThreadReadPipe, NULL);
     if (errno == 0)
     {
@@ -122,37 +124,39 @@ int Thread::CreateThreads()
     }
     else
     {
-        std::cout << "Creating thread  failed! Errno: " << errno << ": ";
+        std::cout << "Creating thread "<<pipe_control_data_to_python <<"  failed! Errno: " << errno << ": ";
         std::cout << strerror(errno) << std::endl;
     }
+     * */
     pthread_create(&thread2, NULL, ThreadWriteControlData, NULL);
     if (errno == 0)
     {
-        std::cout << "Thread 2 created succesfully" << std::endl;
+        std::cout << "Thread "<<pipe_control_data_to_python <<" created succesfully" << std::endl;
     }
     else
     {
-        std::cout << "Creating thread 2 failed! Errno: " << errno << ": ";
+        std::cout << "Creating thread "<<pipe_control_data_to_python <<"  failed! Errno: " << errno << ": ";
         std::cout << strerror(errno) << std::endl;
     }
+    
     pthread_create(&thread3, NULL, ThreadWriteUserPowerData, NULL);
     if (errno == 0)
     {
-        std::cout << "Thread 3 created succesfully" << std::endl;
+        std::cout << "Thread "<< pipe_user_power_to_python <<" created succesfully" << std::endl;
     }
     else
     {
-        std::cout << "Creating thread 3 failed! Errno: " << errno << ": ";
+        std::cout << "Creating thread "<< pipe_user_power_to_python <<" failed! Errno: " << errno << ": ";
         std::cout << strerror(errno) << std::endl;
     }
     pthread_create(&thread4, NULL, ThreadWriteTelemInputData, NULL);
     if (errno == 0)
     {
-        std::cout << "Thread 4 created succesfully" << std::endl;
+        std::cout << "Thread "<< pipe_telem_input_to_python<< " created succesfully" << std::endl;
     }
     else
     {
-        std::cout << "Creating thread 4 failed! Errno: " << errno << ": ";
+        std::cout << "Creating thread "<< pipe_telem_input_to_python<< " failed! Errno: " << errno << ": ";
         std::cout << strerror(errno) << std::endl;
     }
      
@@ -384,12 +388,12 @@ void *ThreadWriteTelemInputData(void *ptr)
         }
         if (TelemInputToPython == 1) // only needs to write if the command is given
         {
-            pthread_mutex_lock(&mutex3);
+            pthread_mutex_lock(&mutex4);
             freopen(pipe_telem_input_to_python, "w", stdout);
             telem_input_pipe.write_struct_telemetry_input_to_log(gl_telemetry_input_ptr);
             TelemInputToPython = 0;
            
-            pthread_mutex_unlock(&mutex3);
+            pthread_mutex_unlock(&mutex4);
         }
         usleep(TELEM_INPUT_WRITE_CYCLE_TIME);
     }
