@@ -43,9 +43,9 @@ Thread::~Thread()
     pthread_join(thread4, &temp);
 }
 
-const char *pipe_control_data_to_python = "/home/ronaldboon/NetBeansProjects/Logging/pipes/ControlDataToPython";
-const char *pipe_user_power_to_python = "/home/ronaldboon/NetBeansProjects/Logging/pipes/UserPowerToPython";
-const char *pipe_telem_input_to_python = "/home/ronaldboon/NetBeansProjects/Logging/pipes/TelemInputToPython";
+const char *pipe_control_data_to_python = "/home/solarboattwente/pipes/ControlDataToPython";
+const char *pipe_user_power_to_python = "/home/solarboattwente/pipes/UserPowerToPython";
+const char *pipe_telem_input_to_python = "/home/solarboattwente/pipes/TelemInputToPython";
 
 Logger control_data_logger("config/control_data.conf");
 Logger user_power_logger("config/user_power.conf");
