@@ -18,15 +18,17 @@ int main(int argc, const char** argv) {
    Thread Threads; 
    std::srand(std::time(nullptr));
    Threads.CreateThreads();
+   
    structures::PowerInput *power_input_ptr, power_input;
    power_input_ptr = &power_input;
    structures::PowerOutput *power_output_ptr, power_output;
    power_output_ptr = &power_output;
    structures::UserInput *user_input_ptr, user_input;
    user_input_ptr = &user_input;
-   
    structures::ControlData *control_data_ptr, control_data;
    control_data_ptr = &control_data;
+   structures::TelemetryInput *telem_input_user, telem_input;
+   telem_input_user = &telem_input;
    
    
    while(1)
@@ -55,6 +57,8 @@ int main(int argc, const char** argv) {
    //user_power_logger.write_struct_user_power_to_log(power_input_ptr, power_output_ptr, user_input_ptr);
    //control_data_logger.write_struct_control_data_to_log(control_data_ptr);
    Threads.writeControlData(control_data_ptr, 0, 1);
+   Threads.writeUserPower(power_input_ptr, power_output_ptr, user_input_ptr, 0, 1);
+   Threads.writeTelemInput(telem_input_user, 0, 1);
    //usleep(20000); 
    }
    return 0;

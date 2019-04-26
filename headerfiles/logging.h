@@ -15,6 +15,7 @@
 #define LOGGING_H
 #include "easylogging++.h"
 #include <string>
+#include <array>
 #include "structures.h"
 #include "convert_power.h"
 
@@ -28,7 +29,6 @@ public:
     void write_struct_user_power_to_log(const structures::PowerInput *power_input_ptr,const structures::PowerOutput *power_output_ptr, const structures::UserInput *user_input_ptr);
     void write_struct_control_data_to_log(const structures::ControlData *control_data_ptr);
     void write_struct_telemetry_input_to_log(const structures::TelemetryInput *telemetry_input_ptr);
-    std::string write_struct_control_data_to_pipe(const structures::ControlData *control_data_ptr);
 private:
 
 };
